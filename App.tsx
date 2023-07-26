@@ -19,8 +19,9 @@ const UserInformation = () => {
     try {
       const _user = await get('user');
       if (_user) {
-        //// TODO: if mom display mom interface, else display full interface
-      } else {
+        setSelectedUser(_user);
+      }
+      else {
         handleUserModal();
       }
     } catch (error) {
@@ -52,8 +53,9 @@ const UserInformation = () => {
     setUserModalVisible(!userModalVisible);
   };
 
-  const handleSelectedUser = (user) => {
+  const handleSelectedUser = async (user) => {
     setSelectedUser(user);
+    await save('user', user);
     handleUserModal();
   }
 

@@ -1,70 +1,84 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
-import Modal from 'react-native-modal';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback, Image } from 'react-native';
 import Title from '../components/text/title';
-import Table from '../components/table';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
-
-const Titles = ['Liste complète', 'Liste de Romain', 'Liste de Marianne', 'Liste de Dominique', 'Suppression définitive'];
+import TableCheck from '../components/tableCheck';
+import TableList from '../components/tableList';
+import Delete from '../components/delete';
+import BottomBar from '../components/bottomBar';
+const Titles = ['Liste complète', 'Liste de Romain', 'Liste de Marianne', 'Liste de Dom', 'Suppression définitive'];
 
 const FullApp = () => {
-  useEffect(() => {
-  }, []);
-
   const [selectedList, setSelectedList] = useState(0);
-  const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [pickerFocused, setPickerFocused] = useState(false);
+  const [isMenuVisible, setMenuVisible] = useState(false);
+
+  const menuData = [
+    { id: 0, label: 'Liste complète' },
+    { id: 1, label: 'Liste de Romain' },
+    { id: 2, label: 'Liste de Marianne' },
+    { id: 3, label: 'Liste de Dom' },
+    { id: 4, label: 'Supprimer toute les listes' },
+  ];
 
   const handleSelectedList = (list) => {
     setSelectedList(list);
-    setMenuModalVisible(false);
+    setMenuVisible(false);
   }
+
+  const handleOpenMenu = () => {
+    setMenuVisible(true);
+  };
+
+  const handleCloseMenu = () => {
+    setMenuVisible(false);
+  };
+
+  const renderMenuItem = ({ item }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={() => handleSelectedList(item.id)}>
+      <Text style={styles.menuItemText}>{item.label}</Text>
+    </TouchableOpacity>
+  );
+
+  const handleOverlayClick = () => {
+    handleCloseMenu();
+  };
 
   return (
     <View>
       <View style={styles.container}>
         <Title text={Titles[selectedList]} />
         <View style={styles.containerList}>
-          <Table />
+        {
+            selectedList === 0 ?
+            <TableCheck />
+            :
+            selectedList === 4 ?
+            <Delete cancel={() => setSelectedList(0)}/>
+            :
+            <TableList />
+        }
         </View>
-      </View>
-      <View>
-        <TouchableOpacity style={styles.fab} onPress={() => setMenuModalVisible(true)}>
-          <Image
-            style={styles.tinyLogo}
-            source={require('../assets/menu.png')}
-          />
-        </TouchableOpacity>
-      </View>
 
-      <Modal visible={menuModalVisible} animationType="slide" transparent={false}>
-        <View style={styles.modalContainer}>
-          <View>
-            <Title text="Menu" />
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={isMenuVisible}
+          onRequestClose={handleCloseMenu}
+        >
+          <TouchableWithoutFeedback onPress={handleOverlayClick}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+
+          <View style={styles.menuContainer}>
+            <FlatList
+              data={menuData}
+              renderItem={renderMenuItem}
+              keyExtractor={(item) => item.id}
+            />
           </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              onFocus={() => setPickerFocused(true)}
-              onBlur={() => setPickerFocused(false)}
-              style={styles.picker}
-              selectedValue={selectedList}
-              onValueChange={(itemValue) => handleSelectedList(itemValue)}
-            >
-            <Picker.Item
-              value=""
-              label="..."
-              enabled={!pickerFocused}
-              />
-              <Picker.Item label="Liste complète" value={0} />
-              <Picker.Item label="Liste de Romain" value={1} />
-              <Picker.Item label="Liste de Marianne" value={2} />
-              <Picker.Item label="Liste de Dominique" value={3} />
-              <Picker.Item label="Supprimer toute les listes" value={4} />
-            </Picker>
-          </View>
-        </View>
-      </Modal>
+        </Modal>
+      </View>
+      <BottomBar handleOpenMenu={handleOpenMenu}/>
     </View>
   );
 };
@@ -75,68 +89,51 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
-    height: "93%",
+    elevation: 0,
+    height: "95%",
+    paddingBottom: 230,
     overflow: 'hidden'
 
   },
+  button: {
+    backgroundColor: 'blue',
+    padding: 10,
+    borderRadius: 5,
+  },
   buttonText: {
+    color: 'white',
     fontSize: 18,
-    fontFamily: 'Gill Sans',
-    textAlign: 'center',
-    margin: 10,
-    color: 'black',
-    backgroundColor: 'transparent',
   },
-  fab: {
-     position: 'absolute',
-     backgroundColor: 'white',
-     borderRadius: 30,
-     width: 60,
-     height: 60,
-     alignItems: 'center',
-     justifyContent: 'center',
-     right: 16,
-     bottom: 0,
-     elevation: 5,
-  },
-  fabText: {
-   fontSize: 24,
-   color: 'grey',
-   fontWeight: 'bold',
-  },
-   tinyLogo: {
-    width: 50,
-    height: 50,
-  },
-  modalContainer: {
+  overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    width: "100%",
-    height: "100%"
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
-  pickerContainer: {
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "thistle",
-    borderRadius: 50,
+  menuContainer: {
+    backgroundColor: 'white',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  menuItem: {
+    paddingVertical: 10,
+  },
+  menuItemText: {
+    fontSize: 18,
+  },
 
-  },
-  picker: {
-    width: 200,
-  },
   containerList: {
-    width: '95%',
-  }
+    width: '100%',
+  },
+  bottomBarView: {
+    width: "100%"
+  },
 });
 
 export default FullApp;
